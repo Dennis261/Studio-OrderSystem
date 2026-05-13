@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}我的待办{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>我的待办</h1>
+    <p>打开来源会自动标记为已读，完成需要手动确认。</p>
+  </div>
+</div>
+
+<div class="tabs">
+  <a class="{% if not status %}active{% endif %}" href="{% url 'todo_list' %}">全部</a>
+  {% for value, label in status_choices %}
+    <a class="{% if status == value %}active{% endif %}" href="?status={{ value }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% include "includes/todo_list.html" with todos=todos %}
+{% endblock %}

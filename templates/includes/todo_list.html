@@ -1,0 +1,20 @@
+<div class="todo-list">
+  {% for todo in todos %}
+    <article class="todo {{ todo.status }}">
+      <div>
+        <a href="{% url 'todo_open' todo.id %}">#{{ todo.order.id }} {{ todo.order.customer_display }}</a>
+        <p>{{ todo.source_post.body|truncatechars:80 }}</p>
+        <small>{{ todo.get_status_display }} · {{ todo.created_at|date:"m-d H:i" }}</small>
+      </div>
+      {% if todo.status != "done" %}
+        <form method="post" action="{% url 'todo_done' todo.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit">完成</button>
+        </form>
+      {% endif %}
+    </article>
+  {% empty %}
+    <p class="empty">暂无待办</p>
+  {% endfor %}
+</div>

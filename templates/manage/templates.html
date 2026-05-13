@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}模板管理{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>模板管理</h1>
+    <p>模板分为客户信息字段和图片要求。发布新版本只影响之后创建的工单。</p>
+  </div>
+</div>
+
+<form method="post" class="panel form-stack template-editor">
+  {% csrf_token %}
+  <div class="panel-head">
+    <h2>发布新模板版本</h2>
+    {% if current %}<span class="status">当前 v{{ current.version }}</span>{% endif %}
+  </div>
+  {{ form.non_field_errors }}
+  <label>{{ form.name.label }}{{ form.name }}{{ form.name.errors }}</label>
+
+  <section>
+    <div class="panel-head">
+      <h2>客户信息字段</h2>
+      <button type="button" data-add-template-row="customer">添加字段</button>
+    </div>
+    <div class="editable-table">
+      <div class="editable-row editable-head">
+        <span>字段名称</span>
+        <span>必填</span>
+        <span>说明</span>
+        <span></span>
+      </div>
+      <div data-template-rows="customer">
+        {% for row in customer_rows %}
+          <div class="editable-row" data-row>
+            <input type="hidden" name="customer_indices" value="{{ row.index }}">
+            <input name="customer_label_{{ row.index }}" value="{{ row.label }}" placeholder="如：客户姓名">
+            <label class="inline-check">
+              <input type="checkbox" name="customer_required_{{ row.index }}" {% if row.required %}checked{% endif %}>
+              必填
+            </label>
+            <input name="customer_help_{{ row.index }}" value="{{ row.help_text }}" placeholder="填写提示，可留空">
+            <button type="button" data-remove-row>删除</button>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel-head">
+      <h2>图片要求</h2>
+      <button type="button" data-add-template-row="image">添加图片项</button>
+    </div>
+    <div class="editable-table image-editor">
+      <div class="editable-row editable-head">
+        <span>图片类别</span>
+        <span>必填</span>
+        <span>需要张数</span>
+        <span>说明</span>
+        <span></span>
+      </div>
+      <div data-template-rows="image">
+        {% for row in image_rows %}
+          <div class="editable-row" data-row>
+            <input type="hidden" name="image_indices" value="{{ row.index }}">
+            <input name="image_label_{{ row.index }}" value="{{ row.label }}" placeholder="如：客户原图">
+            <label class="inline-check">
+              <input type="checkbox" name="image_required_{{ row.index }}" {% if row.required %}checked{% endif %}>
+              必填
+            </label>
+            <input type="number" min="0" name="image_min_count_{{ row.index }}" value="{{ row.min_count|default:0 }}">
+            <input name="image_help_{{ row.index }}" value="{{ row.help_text }}" placeholder="填写提示，可留空">
+            <button type="button" data-remove-row>删除</button>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <button class="primary" type="submit">发布新版本</button>
+</form>
+
+<section class="panel">
+  <h2>最近版本</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>模板</th><th>版本</th><th>客户字段</th><th>图片项</th><th>当前</th><th>创建时间</th></tr></thead>
+      <tbody>
+        {% for template in templates %}
+          <tr>
+            <td>{{ template.name }}</td>
+            <td>v{{ template.version }}</td>
+            <td>{{ template.customer_items.count }}</td>
+            <td>{{ template.items.count }}</td>
+            <td>{% if template.is_active %}是{% else %}否{% endif %}</td>
+            <td>{{ template.created_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="empty">暂无模板版本</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<template id="customer-row-template">
+  <div class="editable-row" data-row>
+    <input type="hidden" name="customer_indices" value="__index__">
+    <input name="customer_label___index__" placeholder="如：客户姓名">
+    <label class="inline-check"><input type="checkbox" name="customer_required___index__"> 必填</label>
+    <input name="customer_help___index__" placeholder="填写提示，可留空">
+    <button type="button" data-remove-row>删除</button>
+  </div>
+</template>
+
+<template id="image-row-template">
+  <div class="editable-row" data-row>
+    <input type="hidden" name="image_indices" value="__index__">
+    <input name="image_label___index__" placeholder="如：客户原图">
+    <label class="inline-check"><input type="checkbox" name="image_required___index__"> 必填</label>
+    <input type="number" min="0" name="image_min_count___index__" value="0">
+    <input name="image_help___index__" placeholder="填写提示，可留空">
+    <button type="button" data-remove-row>删除</button>
+  </div>
+</template>
+{% endblock %}

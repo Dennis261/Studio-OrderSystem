@@ -1,0 +1,47 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}工单协作系统{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  {% if current_member %}
+    <header class="topbar">
+        <a class="brand" href="{% url 'dashboard' %}">工单协作</a>
+      <nav>
+        <a href="{% url 'order_list' %}">工单</a>
+        {% if current_member.is_admin %}
+          <a href="{% url 'order_create' %}">新建</a>
+        {% endif %}
+        <a class="nav-badge" href="{% url 'todo_list' %}">
+          待办
+          {% if unread_todo_count %}
+            <span>{{ unread_todo_count }}</span>
+          {% endif %}
+        </a>
+        {% if current_member.is_admin %}
+          <a href="{% url 'manage_members' %}">成员</a>
+          <a href="{% url 'manage_templates' %}">模板</a>
+          <a href="{% url 'manage_statuses' %}">状态</a>
+        {% endif %}
+      </nav>
+      <div class="member-chip">
+        {{ current_member.name }}
+        {% if current_member.is_admin %}<small>管理员</small>{% endif %}
+        <a href="{% url 'logout' %}">退出</a>
+      </div>
+    </header>
+  {% endif %}
+
+  <main class="page">
+    {% for message in messages %}
+      <div class="message {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

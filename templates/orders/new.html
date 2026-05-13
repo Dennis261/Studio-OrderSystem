@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}新建工单{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>新建工单</h1>
+    <p>当前使用图片模板：{{ template.name }} v{{ template.version }}</p>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="panel form-stack wide">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <h2>客户信息</h2>
+  <div class="form-grid">
+    {% for field in form %}
+      {% if field.name != "status" %}
+        <label>
+          {{ field.label }}
+          {{ field }}
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+          {{ field.errors }}
+        </label>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <label>{{ form.status.label }}{{ form.status }}{{ form.status.errors }}</label>
+
+  <h2>图片要求</h2>
+  <div class="template-upload-grid">
+    {% for item in template_items %}
+      <div class="upload-box">
+        <strong>{{ item.label }}</strong>
+        <small>
+          {% if item.required %}必填{% else %}可选{% endif %}
+          {% if item.min_count %}，至少 {{ item.min_count }} 张{% endif %}
+        </small>
+        {% if item.help_text %}<p>{{ item.help_text }}</p>{% endif %}
+        <label class="file-picker">
+          <input type="file" name="image_{{ item.key }}" multiple accept="image/*" data-file-picker>
+          <span class="file-picker-icon" aria-hidden="true"></span>
+          <span class="file-picker-copy">
+            <span class="file-picker-title">选择图片</span>
+            <span class="file-picker-count" data-file-picker-count>未选择图片</span>
+          </span>
+        </label>
+      </div>
+    {% endfor %}
+  </div>
+
+  <button class="primary" type="submit">创建工单</button>
+</form>
+{% endblock %}

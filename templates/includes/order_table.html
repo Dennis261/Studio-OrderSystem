@@ -1,0 +1,42 @@
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        {% if compact %}
+          <th>工单</th>
+          <th>信息 1</th>
+          <th>信息 2</th>
+        {% else %}
+          <th>工单</th>
+          <th>客户</th>
+          <th>状态</th>
+          <th>创建人</th>
+          <th>更新时间</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+        <tr>
+          {% if compact %}
+            <td><a href="{{ order.get_absolute_url }}">#{{ order.id }}</a></td>
+            {% for row in order.customer_preview_rows %}
+              <td class="key-value-cell">
+                {% if row.label %}<small>{{ row.label }}</small>{% endif %}
+                <strong>{{ row.value }}</strong>
+              </td>
+            {% endfor %}
+          {% else %}
+            <td><a href="{{ order.get_absolute_url }}">#{{ order.id }}</a></td>
+            <td>{{ order.customer_display }}</td>
+            <td><span class="status">{{ order.status.name|default:"未设置" }}</span></td>
+            <td>{{ order.creator.name }}</td>
+            <td>{{ order.updated_at|date:"m-d H:i" }}</td>
+          {% endif %}
+        </tr>
+      {% empty %}
+        <tr><td colspan="{% if compact %}3{% else %}5{% endif %}" class="empty">暂无工单</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

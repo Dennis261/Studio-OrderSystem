@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}登录{% endblock %}
+
+{% block content %}
+<section class="login-shell">
+  <div class="login-panel">
+    <h1>进入工单协作</h1>
+    <p>选择姓名并输入口令。</p>
+    <form method="post" class="form-stack">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <label>{{ form.member.label }}{{ form.member }}</label>
+      <label>{{ form.pin.label }}{{ form.pin }}</label>
+      <button class="primary" type="submit">进入系统</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

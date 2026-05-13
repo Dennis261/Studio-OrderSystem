@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}状态管理{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>状态管理</h1>
+    <p>工单状态是手动标签，成员可自由切换。</p>
+  </div>
+</div>
+
+<section class="grid two">
+  <form method="post" class="panel form-stack">
+    {% csrf_token %}
+    <h2>新增状态</h2>
+    {{ form.as_p }}
+    <button class="primary" type="submit">保存状态</button>
+  </form>
+  <div class="panel">
+    <h2>状态列表</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>状态</th><th>排序</th><th>启用</th></tr></thead>
+        <tbody>
+          {% for status in statuses %}
+            <tr>
+              <td>{{ status.name }}</td>
+              <td>{{ status.sort_order }}</td>
+              <td>{% if status.is_active %}是{% else %}否{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="empty">暂无状态</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

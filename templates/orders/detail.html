@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}工单 #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>工单 #{{ order.id }} · {{ order.customer_display }}</h1>
+    <p>创建人 {{ order.creator.name }} · {{ order.created_at|date:"Y-m-d H:i" }}</p>
+  </div>
+  <a href="{% url 'order_list' %}">返回列表</a>
+</div>
+
+<section class="grid">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>基础信息</h2>
+      <span class="status">{{ order.status.name|default:"未设置" }}</span>
+    </div>
+    <dl class="data-list">
+      {% for row in customer_rows %}
+        <div>
+          <dt>{{ row.label }}</dt>
+          <dd>{{ row.value|default:"-"|linebreaksbr }}</dd>
+        </div>
+      {% empty %}
+        <div>
+          <dt>客户姓名</dt>
+          <dd>{{ order.customer_name|default:"-" }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+    <form method="post" class="inline-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_status">
+      <select name="status">
+        {% for status in statuses %}
+          <option value="{{ status.id }}" {% if order.status_id == status.id %}selected{% endif %}>{{ status.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">更新状态</button>
+    </form>
+    {% if my_open_todos %}
+      <div class="todo-strip">
+        你在此工单有 {{ my_open_todos|length }} 条未完成待办。
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% if warnings %}
+  <section class="warning-list">
+    {% for warning in warnings %}
+      <div>{{ warning }}</div>
+    {% endfor %}
+  </section>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>工单图片</h2>
+    <small>{{ order.template_snapshot.name }} v{{ order.template_snapshot.version }}</small>
+  </div>
+  <div class="image-sections">
+    {% for section in template_sections %}
+      <div class="image-section">
+        <div class="image-section-head">
+          <strong>{{ section.item.label }}</strong>
+          <small>{% if section.item.required %}必填{% else %}可选{% endif %} · 至少 {{ section.item.min_count }} 张</small>
+        </div>
+        <div class="image-grid">
+          {% for image in section.images %}
+            <a href="{{ image.image.url }}" target="_blank">
+              <img src="{{ image.image.url }}" alt="{{ image.label }}">
+            </a>
+          {% empty %}
+            <span class="empty">暂无图片</span>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel post-history-panel">
+  <div class="panel-head">
+    <h2>跟帖记录</h2>
+  </div>
+  <div class="timeline">
+    {% for post in order.posts.all %}
+      <article class="post" id="post-{{ post.id }}">
+        <div class="post-meta">
+          <strong>{{ post.author.name|default:"未知成员" }}</strong>
+          <span>{{ post.created_at|date:"Y-m-d H:i" }}</span>
+        </div>
+        <p>{{ post.body|linebreaksbr }}</p>
+        {% if post.attachments.all %}
+          <div class="attachments image-attachments">
+            {% for attachment in post.attachments.all %}
+              <a class="attachment-preview" href="{{ attachment.image.url }}" target="_blank" aria-label="查看跟帖图片">
+                <img src="{{ attachment.image.url }}" alt="跟帖图片">
+              </a>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </article>
+    {% empty %}
+      <p class="empty">还没有跟帖。</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel post-compose-panel">
+  <div class="panel-head">
+    <h2>发布跟帖</h2>
+  </div>
+  <form method="post" enctype="multipart/form-data" class="form-stack post-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_post">
+    <div class="mention-toolbar">
+      {% for member in members %}
+        <button type="button" data-mention="@{{ member.name }}">@{{ member.name }}</button>
+      {% endfor %}
+    </div>
+    {{ post_form.body }}
+    {{ post_form.body.errors }}
+    <label class="file-picker post-image-picker">
+      <input type="file" name="attachments" multiple accept="image/*" data-file-picker>
+      <span class="file-picker-icon" aria-hidden="true"></span>
+      <span class="file-picker-copy">
+        <span class="file-picker-title">上传跟帖图片</span>
+        <span class="file-picker-count" data-file-picker-count>未选择图片</span>
+      </span>
+    </label>
+    <button class="primary" type="submit">发布跟帖</button>
+  </form>
+</section>
+{% endblock %}
