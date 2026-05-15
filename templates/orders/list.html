@@ -6,7 +6,7 @@
 <div class="page-head">
   <div>
     <h1>工单列表</h1>
-    <p>按状态或我的待办筛选当前工单。</p>
+    <p>按状态标签、归档状态或我的待办筛选当前工单。</p>
   </div>
   {% if current_member.is_admin %}
     <a class="primary" href="{% url 'order_create' %}">新建工单</a>
@@ -16,11 +16,15 @@
 <form method="get" class="filters">
   <label>状态
     <select name="status">
-      <option value="">全部状态</option>
+      <option value="">全部状态标签</option>
       {% for status in statuses %}
         <option value="{{ status.id }}" {% if status_id == status.id|stringformat:"s" %}selected{% endif %}>{{ status.name }}</option>
       {% endfor %}
     </select>
+  </label>
+  <label class="inline-check">
+    <input type="checkbox" name="archived" value="1" {% if show_archived %}checked{% endif %}>
+    显示归档
   </label>
   <label class="inline-check">
     <input type="checkbox" name="mine" value="1" {% if mine %}checked{% endif %}>

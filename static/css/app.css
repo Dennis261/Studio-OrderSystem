@@ -440,6 +440,55 @@ td:first-child a {
   background: var(--mint);
 }
 
+.status.archive {
+  color: #6f4519;
+  border-color: rgba(148, 100, 11, 0.24);
+  background: #fff0d1;
+}
+
+.status.active {
+  color: var(--brand-dark);
+  border-color: rgba(13, 107, 95, 0.2);
+  background: #e8f5ee;
+}
+
+.tag-list,
+.check-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.check-list {
+  align-items: stretch;
+}
+
+.field-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field-group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+}
+
+.field-group label {
+  display: inline-flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 34px;
+}
+
+.quiet {
+  color: var(--quiet);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 .empty {
   color: var(--quiet);
   text-align: center;
@@ -515,9 +564,23 @@ textarea:focus {
 }
 
 input[type="checkbox"] {
+  flex: 0 0 auto;
   width: 1.05rem;
+  height: 1.05rem;
+  min-width: 1.05rem;
   min-height: 1.05rem;
+  margin: 0;
+  padding: 0;
+  border-radius: 3px;
   accent-color: var(--brand);
+  box-shadow: none;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:focus {
+  background: var(--field);
+  box-shadow: none;
 }
 
 input[type="file"] {
@@ -548,6 +611,8 @@ input[type="file"]::file-selector-button:hover {
   align-items: center;
   gap: 0.5rem;
   min-height: 42px;
+  cursor: pointer;
+  line-height: 1.3;
 }
 
 .data-list {

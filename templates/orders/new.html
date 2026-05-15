@@ -16,7 +16,7 @@
   <h2>客户信息</h2>
   <div class="form-grid">
     {% for field in form %}
-      {% if field.name != "status" %}
+      {% if field.name != "tags" %}
         <label>
           {{ field.label }}
           {{ field }}
@@ -26,7 +26,11 @@
       {% endif %}
     {% endfor %}
   </div>
-  <label>{{ form.status.label }}{{ form.status }}{{ form.status.errors }}</label>
+  <div class="field-group">
+    <strong>{{ form.tags.label }}</strong>
+    {{ form.tags }}
+    {{ form.tags.errors }}
+  </div>
 
   <h2>图片要求</h2>
   <div class="template-upload-grid">

@@ -1,6 +1,7 @@
 from io import BytesIO
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from PIL import Image
@@ -37,10 +38,10 @@ class WorkOrderModelTests(TestCase):
     def test_order_locks_template_snapshot(self):
         order = WorkOrder.objects.create(
             customer_name="张三",
-            status=self.status,
             creator=self.member,
             template_snapshot=self.template.to_snapshot(),
         )
+        order.tags.add(self.status)
         self.template.is_active = False
         self.template.save()
         new_template = ImageTemplate.objects.create(name="新模板", version=2, is_active=True)
@@ -60,10 +61,10 @@ class WorkOrderModelTests(TestCase):
     def test_missing_required_image_warns_without_blocking(self):
         order = WorkOrder.objects.create(
             customer_name="张三",
-            status=self.status,
             creator=self.member,
             template_snapshot=self.template.to_snapshot(),
         )
+        order.tags.add(self.status)
 
         self.assertEqual(order.image_warnings(), ["客户原图 至少需要 1 张，当前 0 张。"])
 
@@ -79,11 +80,11 @@ class MentionTodoTests(TestCase):
         self.status = StatusOption.objects.create(name="新建")
         self.order = WorkOrder.objects.create(
             customer_name="张三",
-            status=self.status,
             creator=self.author,
             customer_data={"customer-name": "张三"},
             template_snapshot={"customer_fields": [{"key": "customer-name", "label": "客户姓名"}], "items": []},
         )
+        self.order.tags.add(self.status)
 
     def test_duplicate_mentions_create_one_todo(self):
         post = Post.objects.create(
@@ -98,6 +99,16 @@ class MentionTodoTests(TestCase):
         self.assertEqual(Todo.objects.get().target, self.target)
 
 
+class SeedDemoTests(TestCase):
+    def test_seed_demo_creates_tagged_and_archived_orders(self):
+        call_command("seed_demo", verbosity=0)
+
+        archived_order = WorkOrder.objects.get(customer_name="钱七")
+        self.assertTrue(archived_order.is_archived)
+        self.assertEqual(list(archived_order.tags.values_list("name", flat=True)), ["已完成", "售后"])
+        self.assertTrue(WorkOrder.objects.filter(tags__name="待确认", is_archived=False).exists())
+
+
 class ViewTests(TestCase):
     def setUp(self):
         self.admin = Member.objects.create(name="管理员", is_admin=True)
@@ -107,6 +118,7 @@ class ViewTests(TestCase):
         self.member.set_pin("123456")
         self.member.save()
         self.status = StatusOption.objects.create(name="新建")
+        self.review_status = StatusOption.objects.create(name="待确认")
         self.template = ImageTemplate.objects.create(name="默认模板", version=1, is_active=True)
         CustomerTemplateItem.objects.create(
             template=self.template,
@@ -116,11 +128,11 @@ class ViewTests(TestCase):
         )
         self.order = WorkOrder.objects.create(
             customer_name="张三",
-            status=self.status,
             creator=self.member,
             customer_data={"customer-name": "张三"},
             template_snapshot=self.template.to_snapshot(),
         )
+        self.order.tags.add(self.status)
         self.post = Post.objects.create(order=self.order, author=self.admin, body="@普通成员 处理")
         self.todo = Todo.objects.create(order=self.order, source_post=self.post, target=self.member)
 
@@ -157,7 +169,6 @@ class ViewTests(TestCase):
         response = self.client.post(
             reverse("order_create"),
             {
-                "status": self.status.id,
                 "customer_customer-name": "李四",
             },
         )
@@ -165,6 +176,91 @@ class ViewTests(TestCase):
         order = WorkOrder.objects.exclude(pk=self.order.pk).get()
         self.assertEqual(order.customer_data["customer-name"], "李四")
         self.assertEqual(order.customer_display, "李四")
+        self.assertEqual(list(order.tags.all()), [self.status])
+
+    def test_order_can_have_multiple_tags_and_renders_them(self):
+        self.order.tags.add(self.review_status)
+        self.login_as(self.member)
+
+        response = self.client.get(reverse("order_detail", args=[self.order.id]))
+
+        self.assertContains(response, "新建")
+        self.assertContains(response, "待确认")
+        self.assertContains(response, "data-auto-submit")
+        self.assertNotContains(response, "更新标签")
+
+    def test_update_tags_replaces_order_tags(self):
+        self.login_as(self.member)
+
+        response = self.client.post(
+            reverse("order_detail", args=[self.order.id]),
+            {"action": "update_tags", "tags": [self.review_status.id]},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.order.refresh_from_db()
+        self.assertEqual(list(self.order.tags.values_list("name", flat=True)), ["待确认"])
+
+    def test_order_list_filters_by_tag(self):
+        other = WorkOrder.objects.create(
+            customer_name="李四",
+            creator=self.member,
+            customer_data={"customer-name": "李四"},
+            template_snapshot=self.template.to_snapshot(),
+        )
+        other.tags.add(self.review_status)
+        self.login_as(self.member)
+
+        response = self.client.get(reverse("order_list"), {"status": self.review_status.id})
+
+        self.assertContains(response, "李四")
+        self.assertNotContains(response, "张三")
+
+    def test_order_list_hides_archived_by_default_and_can_show_them(self):
+        archived = WorkOrder.objects.create(
+            customer_name="归档客户",
+            creator=self.member,
+            customer_data={"customer-name": "归档客户"},
+            is_archived=True,
+            template_snapshot=self.template.to_snapshot(),
+        )
+        archived.tags.add(self.status)
+        self.login_as(self.member)
+
+        response = self.client.get(reverse("order_list"))
+        self.assertNotContains(response, "归档客户")
+
+        response = self.client.get(reverse("order_list"), {"archived": "1"})
+        self.assertContains(response, "归档客户")
+
+    def test_dashboard_hides_archived_orders(self):
+        archived = WorkOrder.objects.create(
+            customer_name="首页归档客户",
+            creator=self.member,
+            customer_data={"customer-name": "首页归档客户"},
+            is_archived=True,
+            template_snapshot=self.template.to_snapshot(),
+        )
+        archived.tags.add(self.status)
+        self.login_as(self.member)
+
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertNotContains(response, "首页归档客户")
+
+    def test_mark_complete_only_archives_order(self):
+        self.login_as(self.member)
+
+        response = self.client.post(
+            reverse("order_detail", args=[self.order.id]),
+            {"action": "update_archive", "is_archived": "1"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.order.refresh_from_db()
+        self.assertTrue(self.order.is_archived)
+        self.assertEqual(self.todo.status, Todo.Status.UNREAD)
+        self.assertEqual(list(self.order.tags.all()), [self.status])
 
     def test_open_todo_marks_read(self):
         self.login_as(self.member)

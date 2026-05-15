@@ -15,7 +15,18 @@
   <div class="panel">
     <div class="panel-head">
       <h2>基础信息</h2>
-      <span class="status">{{ order.status.name|default:"未设置" }}</span>
+      <div class="tag-list">
+        {% for tag in order.tags.all %}
+          <span class="status">{{ tag.name }}</span>
+        {% empty %}
+          <span class="quiet">未贴标签</span>
+        {% endfor %}
+        {% if order.is_archived %}
+          <span class="status archive">已归档</span>
+        {% else %}
+          <span class="status active">活跃</span>
+        {% endif %}
+      </div>
     </div>
     <dl class="data-list">
       {% for row in customer_rows %}
@@ -30,15 +41,28 @@
         </div>
       {% endfor %}
     </dl>
+    <form method="post" class="inline-form" data-auto-submit>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_tags">
+      <div class="check-list">
+        {% for status in statuses %}
+          <label class="inline-check">
+            <input type="checkbox" name="tags" value="{{ status.id }}" {% if status.id in active_tag_ids %}checked{% endif %}>
+            {{ status.name }}
+          </label>
+        {% endfor %}
+      </div>
+    </form>
     <form method="post" class="inline-form">
       {% csrf_token %}
-      <input type="hidden" name="action" value="update_status">
-      <select name="status">
-        {% for status in statuses %}
-          <option value="{{ status.id }}" {% if order.status_id == status.id %}selected{% endif %}>{{ status.name }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit">更新状态</button>
+      <input type="hidden" name="action" value="update_archive">
+      {% if order.is_archived %}
+        <input type="hidden" name="is_archived" value="0">
+        <button type="submit">取消归档</button>
+      {% else %}
+        <input type="hidden" name="is_archived" value="1">
+        <button type="submit">标记已完成</button>
+      {% endif %}
     </form>
     {% if my_open_todos %}
       <div class="todo-strip">

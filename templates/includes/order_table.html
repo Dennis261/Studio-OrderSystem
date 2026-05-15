@@ -9,7 +9,8 @@
         {% else %}
           <th>工单</th>
           <th>客户</th>
-          <th>状态</th>
+          <th>状态标签</th>
+          <th>归档</th>
           <th>创建人</th>
           <th>更新时间</th>
         {% endif %}
@@ -29,13 +30,28 @@
           {% else %}
             <td><a href="{{ order.get_absolute_url }}">#{{ order.id }}</a></td>
             <td>{{ order.customer_display }}</td>
-            <td><span class="status">{{ order.status.name|default:"未设置" }}</span></td>
+            <td>
+              <div class="tag-list">
+                {% for tag in order.tags.all %}
+                  <span class="status">{{ tag.name }}</span>
+                {% empty %}
+                  <span class="quiet">未贴标签</span>
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              {% if order.is_archived %}
+                <span class="status archive">已归档</span>
+              {% else %}
+                <span class="quiet">活跃</span>
+              {% endif %}
+            </td>
             <td>{{ order.creator.name }}</td>
             <td>{{ order.updated_at|date:"m-d H:i" }}</td>
           {% endif %}
         </tr>
       {% empty %}
-        <tr><td colspan="{% if compact %}3{% else %}5{% endif %}" class="empty">暂无工单</td></tr>
+        <tr><td colspan="{% if compact %}3{% else %}6{% endif %}" class="empty">暂无工单</td></tr>
       {% endfor %}
     </tbody>
   </table>

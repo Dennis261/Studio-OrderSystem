@@ -29,6 +29,13 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("change", (event) => {
+  const autoSubmitField = event.target.closest("[data-auto-submit] input[type='checkbox']");
+  if (autoSubmitField) {
+    const form = autoSubmitField.closest("form");
+    form?.requestSubmit();
+    return;
+  }
+
   const input = event.target.closest("[data-file-picker]");
   if (!input) return;
 

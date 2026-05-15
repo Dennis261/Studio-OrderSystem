@@ -4,16 +4,17 @@ from .models import CustomerTemplateItem, ImageTemplate, ImageTemplateItem, Stat
 
 
 class WorkOrderForm(forms.Form):
-    status = forms.ModelChoiceField(
-        label="状态",
+    tags = forms.ModelMultipleChoiceField(
+        label="状态标签",
         queryset=StatusOption.objects.none(),
         required=False,
+        widget=forms.CheckboxSelectMultiple,
     )
 
     def __init__(self, *args, template_snapshot=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.template_snapshot = template_snapshot or {}
-        self.fields["status"].queryset = StatusOption.objects.filter(is_active=True)
+        self.fields["tags"].queryset = StatusOption.objects.filter(is_active=True)
         for item in self.customer_fields:
             self.fields[f"customer_{item['key']}"] = forms.CharField(
                 label=item["label"],

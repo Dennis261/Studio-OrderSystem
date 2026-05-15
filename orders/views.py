@@ -17,7 +17,9 @@ from .models import ImageTemplate, StatusOption, WorkOrder, WorkOrderImage
 @member_required
 def dashboard(request):
     orders = (
-        WorkOrder.objects.select_related("status", "creator")
+        WorkOrder.objects.select_related("creator")
+        .prefetch_related("tags")
+        .filter(is_archived=False)
         .order_by("-updated_at")[:10]
     )
     my_todos = (
@@ -39,10 +41,13 @@ def dashboard(request):
 @member_required
 def order_list(request):
     status_id = request.GET.get("status")
+    show_archived = request.GET.get("archived") == "1"
     mine = request.GET.get("mine") == "1"
-    orders = WorkOrder.objects.select_related("status", "creator")
+    orders = WorkOrder.objects.select_related("creator").prefetch_related("tags")
+    if not show_archived:
+        orders = orders.filter(is_archived=False)
     if status_id:
-        orders = orders.filter(status_id=status_id)
+        orders = orders.filter(tags__id=status_id)
     if mine:
         orders = orders.filter(todos__target=request.current_member).exclude(
             todos__status=Todo.Status.DONE
@@ -54,6 +59,7 @@ def order_list(request):
             "orders": orders.distinct(),
             "statuses": StatusOption.objects.filter(is_active=True),
             "status_id": status_id,
+            "show_archived": show_archived,
             "mine": mine,
         },
     )
@@ -70,17 +76,25 @@ def order_create(request):
     template_snapshot = template.to_snapshot()
     form = WorkOrderForm(request.POST or None, template_snapshot=template_snapshot)
     if request.method == "GET":
-        form.fields["status"].initial = StatusOption.objects.filter(is_active=True).first()
+        default_tag = StatusOption.objects.filter(name="新建", is_active=True).first()
+        if default_tag:
+            form.fields["tags"].initial = [default_tag]
 
     if request.method == "POST" and form.is_valid():
         customer_data = form.customer_data()
         order = WorkOrder.objects.create(
             customer_name=_first_customer_value(template_snapshot, customer_data),
             customer_data=customer_data,
-            status=form.cleaned_data.get("status") or StatusOption.objects.filter(is_active=True).first(),
             creator=request.current_member,
             template_snapshot=template_snapshot,
         )
+        selected_tags = form.cleaned_data.get("tags")
+        if selected_tags:
+            order.tags.set(selected_tags)
+        else:
+            default_tag = StatusOption.objects.filter(name="新建", is_active=True).first()
+            if default_tag:
+                order.tags.add(default_tag)
         _save_order_images(order, request, request.current_member)
         messages.success(request, "工单已创建。")
         return redirect(order)
@@ -101,19 +115,25 @@ def order_create(request):
 @transaction.atomic
 def order_detail(request, pk):
     order = get_object_or_404(
-        WorkOrder.objects.select_related("status", "creator").prefetch_related(
-            "images", "posts__author", "posts__attachments", "posts__todos"
+        WorkOrder.objects.select_related("creator").prefetch_related(
+            "tags", "images", "posts__author", "posts__attachments", "posts__todos"
         ),
         pk=pk,
     )
 
     if request.method == "POST":
         action = request.POST.get("action")
-        if action == "update_status":
-            status = get_object_or_404(StatusOption, pk=request.POST.get("status"), is_active=True)
-            order.status = status
-            order.save(update_fields=["status", "updated_at"])
-            messages.success(request, "状态已更新。")
+        if action == "update_tags":
+            tags = StatusOption.objects.filter(pk__in=request.POST.getlist("tags"), is_active=True)
+            order.tags.set(tags)
+            order.save(update_fields=["updated_at"])
+            messages.success(request, "状态标签已更新。")
+            return redirect(order)
+
+        if action == "update_archive":
+            order.is_archived = request.POST.get("is_archived") == "1"
+            order.save(update_fields=["is_archived", "updated_at"])
+            messages.success(request, "归档状态已更新。")
             return redirect(order)
 
         if action == "add_post":
@@ -158,6 +178,7 @@ def order_detail(request, pk):
             "customer_rows": _customer_rows(order),
             "template_sections": template_sections,
             "warnings": order.image_warnings(),
+            "active_tag_ids": list(order.tags.values_list("id", flat=True)),
             "my_open_todos": order.todos.filter(target=request.current_member).exclude(
                 status=Todo.Status.DONE
             ),

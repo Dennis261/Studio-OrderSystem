@@ -6,14 +6,14 @@ from accounts.models import Member
 
 
 class StatusOption(models.Model):
-    name = models.CharField("状态名称", max_length=40, unique=True)
+    name = models.CharField("状态标签名称", max_length=40, unique=True)
     sort_order = models.PositiveIntegerField("排序", default=0)
     is_active = models.BooleanField("启用", default=True)
 
     class Meta:
         ordering = ["sort_order", "id"]
-        verbose_name = "工单状态"
-        verbose_name_plural = "工单状态"
+        verbose_name = "工单状态标签"
+        verbose_name_plural = "工单状态标签"
 
     def __str__(self):
         return self.name
@@ -139,14 +139,13 @@ class WorkOrder(models.Model):
     customer_contact = models.CharField("联系方式", max_length=120, blank=True)
     customer_note = models.TextField("客户备注", blank=True)
     customer_data = models.JSONField("客户信息", default=dict, blank=True)
-    status = models.ForeignKey(
+    tags = models.ManyToManyField(
         StatusOption,
-        verbose_name="状态",
-        null=True,
         blank=True,
-        on_delete=models.SET_NULL,
         related_name="orders",
+        verbose_name="状态标签",
     )
+    is_archived = models.BooleanField("已归档", default=False)
     creator = models.ForeignKey(
         Member,
         verbose_name="创建人",

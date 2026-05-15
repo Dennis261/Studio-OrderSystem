@@ -33,7 +33,13 @@ class WorkOrderImageInline(admin.TabularInline):
 
 @admin.register(WorkOrder)
 class WorkOrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "customer_display", "status", "creator", "updated_at")
-    list_filter = ("status",)
+    list_display = ("id", "customer_display", "tag_display", "is_archived", "creator", "updated_at")
+    list_filter = ("is_archived", "tags")
     search_fields = ("customer_name", "customer_contact")
+    filter_horizontal = ("tags",)
     inlines = [WorkOrderImageInline]
+
+    @admin.display(description="状态标签")
+    def tag_display(self, obj):
+        tags = list(obj.tags.all())
+        return "、".join(tag.name for tag in tags) if tags else "未贴标签"
