@@ -1,0 +1,11 @@
+<div class="page-head">
+  <div>
+    <h1>{% if title_prefix %}{{ title_prefix }}{% endif %}{{ title }}{% if title_extra %} · {{ title_extra }}{% endif %}</h1>
+    {% if subtitle_prefix or subtitle or subtitle_mid or subtitle_extra or subtitle_suffix %}
+      <p>{{ subtitle_prefix }}{{ subtitle }}{{ subtitle_mid }}{{ subtitle_extra }}{{ subtitle_suffix }}</p>
+    {% endif %}
+  </div>
+  {% if action_url and action_label %}
+    <a class="{{ action_class }}" href="{{ action_url }}">{{ action_label }}</a>
+  {% endif %}
+</div>

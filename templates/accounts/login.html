@@ -5,8 +5,7 @@
 {% block content %}
 <section class="login-shell">
   <div class="login-panel">
-    <h1>进入工单协作</h1>
-    <p>选择姓名并输入口令。</p>
+    {% include "components/page_header.html" with title="进入工单协作" subtitle="选择姓名并输入口令。" only %}
     <form method="post" class="form-stack">
       {% csrf_token %}
       {{ form.non_field_errors }}

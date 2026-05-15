@@ -3,14 +3,9 @@
 {% block title %}新建工单{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>新建工单</h1>
-    <p>当前使用图片模板：{{ template.name }} v{{ template.version }}</p>
-  </div>
-</div>
+{% include "components/page_header.html" with title="新建工单" subtitle_prefix="当前使用图片模板：" subtitle=template.name subtitle_mid=" v" subtitle_extra=template.version only %}
 
-<form method="post" enctype="multipart/form-data" class="panel form-stack wide">
+<form method="post" enctype="multipart/form-data" class="panel form-stack order-create-form">
   {% csrf_token %}
   {{ form.non_field_errors }}
   <h2>客户信息</h2>
@@ -42,14 +37,7 @@
           {% if item.min_count %}，至少 {{ item.min_count }} 张{% endif %}
         </small>
         {% if item.help_text %}<p>{{ item.help_text }}</p>{% endif %}
-        <label class="file-picker">
-          <input type="file" name="image_{{ item.key }}" multiple accept="image/*" data-file-picker>
-          <span class="file-picker-icon" aria-hidden="true"></span>
-          <span class="file-picker-copy">
-            <span class="file-picker-title">选择图片</span>
-            <span class="file-picker-count" data-file-picker-count>未选择图片</span>
-          </span>
-        </label>
+        {% include "components/file_picker.html" with name_prefix="image_" name=item.key multiple=True title="选择图片" only %}
       </div>
     {% endfor %}
   </div>

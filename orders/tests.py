@@ -38,7 +38,6 @@ class WorkOrderModelTests(TestCase):
     def test_order_locks_template_snapshot(self):
         order = WorkOrder.objects.create(
             customer_name="张三",
-            creator=self.member,
             template_snapshot=self.template.to_snapshot(),
         )
         order.tags.add(self.status)
@@ -61,7 +60,6 @@ class WorkOrderModelTests(TestCase):
     def test_missing_required_image_warns_without_blocking(self):
         order = WorkOrder.objects.create(
             customer_name="张三",
-            creator=self.member,
             template_snapshot=self.template.to_snapshot(),
         )
         order.tags.add(self.status)
@@ -80,7 +78,6 @@ class MentionTodoTests(TestCase):
         self.status = StatusOption.objects.create(name="新建")
         self.order = WorkOrder.objects.create(
             customer_name="张三",
-            creator=self.author,
             customer_data={"customer-name": "张三"},
             template_snapshot={"customer_fields": [{"key": "customer-name", "label": "客户姓名"}], "items": []},
         )
@@ -103,10 +100,18 @@ class SeedDemoTests(TestCase):
     def test_seed_demo_creates_tagged_and_archived_orders(self):
         call_command("seed_demo", verbosity=0)
 
-        archived_order = WorkOrder.objects.get(customer_name="钱七")
+        archived_order = WorkOrder.objects.get(customer_name="初音未来")
         self.assertTrue(archived_order.is_archived)
-        self.assertEqual(list(archived_order.tags.values_list("name", flat=True)), ["已完成", "售后"])
-        self.assertTrue(WorkOrder.objects.filter(tags__name="待确认", is_archived=False).exists())
+        self.assertEqual(list(archived_order.tags.values_list("name", flat=True)), ["已发货"])
+        self.assertTrue(WorkOrder.objects.filter(tags__name="建模中", is_archived=False).exists())
+        self.assertTrue(StatusOption.objects.filter(name="发色确认卡确认").exists())
+        self.assertTrue(
+            ImageTemplate.active().customer_items.filter(
+                key="head-circumference",
+                label="客户头围",
+                required=True,
+            ).exists()
+        )
 
 
 class ViewTests(TestCase):
@@ -128,7 +133,6 @@ class ViewTests(TestCase):
         )
         self.order = WorkOrder.objects.create(
             customer_name="张三",
-            creator=self.member,
             customer_data={"customer-name": "张三"},
             template_snapshot=self.template.to_snapshot(),
         )
@@ -204,7 +208,6 @@ class ViewTests(TestCase):
     def test_order_list_filters_by_tag(self):
         other = WorkOrder.objects.create(
             customer_name="李四",
-            creator=self.member,
             customer_data={"customer-name": "李四"},
             template_snapshot=self.template.to_snapshot(),
         )
@@ -219,7 +222,6 @@ class ViewTests(TestCase):
     def test_order_list_hides_archived_by_default_and_can_show_them(self):
         archived = WorkOrder.objects.create(
             customer_name="归档客户",
-            creator=self.member,
             customer_data={"customer-name": "归档客户"},
             is_archived=True,
             template_snapshot=self.template.to_snapshot(),
@@ -236,7 +238,6 @@ class ViewTests(TestCase):
     def test_dashboard_hides_archived_orders(self):
         archived = WorkOrder.objects.create(
             customer_name="首页归档客户",
-            creator=self.member,
             customer_data={"customer-name": "首页归档客户"},
             is_archived=True,
             template_snapshot=self.template.to_snapshot(),
@@ -280,6 +281,12 @@ class ViewTests(TestCase):
         self.login_as(self.member)
         response = self.client.get(reverse("order_list"), {"mine": "1"})
         self.assertContains(response, "张三")
+
+    def test_order_list_does_not_render_creator_column(self):
+        self.login_as(self.member)
+        response = self.client.get(reverse("order_list"))
+        self.assertNotContains(response, "<th>创建人</th>", html=True)
+        self.assertNotContains(response, 'data-label="创建人"')
 
     def test_dashboard_uses_compact_order_table(self):
         self.login_as(self.member)

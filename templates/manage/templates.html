@@ -3,27 +3,20 @@
 {% block title %}模板管理{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>模板管理</h1>
-    <p>模板分为客户信息字段和图片要求。发布新版本只影响之后创建的工单。</p>
-  </div>
-</div>
+{% include "components/page_header.html" with title="模板管理" subtitle="模板分为客户信息字段和图片要求。发布新版本只影响之后创建的工单。" only %}
 
 <form method="post" class="panel form-stack template-editor">
   {% csrf_token %}
-  <div class="panel-head">
-    <h2>发布新模板版本</h2>
-    {% if current %}<span class="status">当前 v{{ current.version }}</span>{% endif %}
-  </div>
+  {% if current %}
+    {% include "components/panel_header.html" with title="发布新模板版本" badge_label_prefix="当前 v" badge_label=current.version only %}
+  {% else %}
+    {% include "components/panel_header.html" with title="发布新模板版本" only %}
+  {% endif %}
   {{ form.non_field_errors }}
   <label>{{ form.name.label }}{{ form.name }}{{ form.name.errors }}</label>
 
   <section>
-    <div class="panel-head">
-      <h2>客户信息字段</h2>
-      <button type="button" data-add-template-row="customer">添加字段</button>
-    </div>
+    {% include "components/panel_header.html" with title="客户信息字段" button_label="添加字段" button_template_row="customer" only %}
     <div class="editable-table">
       <div class="editable-row editable-head">
         <span>字段名称</span>
@@ -49,10 +42,7 @@
   </section>
 
   <section>
-    <div class="panel-head">
-      <h2>图片要求</h2>
-      <button type="button" data-add-template-row="image">添加图片项</button>
-    </div>
+    {% include "components/panel_header.html" with title="图片要求" button_label="添加图片项" button_template_row="image" only %}
     <div class="editable-table image-editor">
       <div class="editable-row editable-head">
         <span>图片类别</span>
@@ -83,7 +73,7 @@
 </form>
 
 <section class="panel">
-  <h2>最近版本</h2>
+  {% include "components/panel_header.html" with title="最近版本" only %}
   <div class="table-wrap">
     <table>
       <thead><tr><th>模板</th><th>版本</th><th>客户字段</th><th>图片项</th><th>当前</th><th>创建时间</th></tr></thead>

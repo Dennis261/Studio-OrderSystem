@@ -17,8 +17,7 @@ from .models import ImageTemplate, StatusOption, WorkOrder, WorkOrderImage
 @member_required
 def dashboard(request):
     orders = (
-        WorkOrder.objects.select_related("creator")
-        .prefetch_related("tags")
+        WorkOrder.objects.prefetch_related("tags")
         .filter(is_archived=False)
         .order_by("-updated_at")[:10]
     )
@@ -43,7 +42,7 @@ def order_list(request):
     status_id = request.GET.get("status")
     show_archived = request.GET.get("archived") == "1"
     mine = request.GET.get("mine") == "1"
-    orders = WorkOrder.objects.select_related("creator").prefetch_related("tags")
+    orders = WorkOrder.objects.prefetch_related("tags")
     if not show_archived:
         orders = orders.filter(is_archived=False)
     if status_id:
@@ -85,7 +84,6 @@ def order_create(request):
         order = WorkOrder.objects.create(
             customer_name=_first_customer_value(template_snapshot, customer_data),
             customer_data=customer_data,
-            creator=request.current_member,
             template_snapshot=template_snapshot,
         )
         selected_tags = form.cleaned_data.get("tags")
@@ -115,7 +113,7 @@ def order_create(request):
 @transaction.atomic
 def order_detail(request, pk):
     order = get_object_or_404(
-        WorkOrder.objects.select_related("creator").prefetch_related(
+        WorkOrder.objects.prefetch_related(
             "tags", "images", "posts__author", "posts__attachments", "posts__todos"
         ),
         pk=pk,

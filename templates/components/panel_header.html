@@ -1,0 +1,15 @@
+<div class="panel-head">
+  <h2>{{ title }}</h2>
+  {% if meta_prefix or meta or meta_mid or meta_extra or meta_suffix %}
+    <small>{{ meta_prefix }}{{ meta }}{{ meta_mid }}{{ meta_extra }}{{ meta_suffix }}</small>
+  {% endif %}
+  {% if badge_label %}
+    <span class="status{% if badge_variant %} {{ badge_variant }} is-{{ badge_variant }}{% endif %}">{{ badge_label_prefix }}{{ badge_label }}{{ badge_label_suffix }}</span>
+  {% endif %}
+  {% if action_url and action_label %}
+    <a href="{{ action_url }}">{{ action_label }}</a>
+  {% endif %}
+  {% if button_label and button_template_row %}
+    <button type="button" data-add-template-row="{{ button_template_row }}">{{ button_label }}</button>
+  {% endif %}
+</div>

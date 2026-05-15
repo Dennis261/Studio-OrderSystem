@@ -3,12 +3,7 @@
 {% block title %}状态标签管理{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>状态标签管理</h1>
-    <p>工单状态是可叠加的手动标签，不再代表线性流程。</p>
-  </div>
-</div>
+{% include "components/page_header.html" with title="状态标签管理" subtitle="工单状态是可叠加的手动标签，不再代表线性流程。" only %}
 
 <section class="grid two">
   <form method="post" class="panel form-stack">
@@ -18,22 +13,21 @@
     <button class="primary" type="submit">保存标签</button>
   </form>
   <div class="panel">
-    <h2>标签列表</h2>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>状态标签</th><th>排序</th><th>启用</th></tr></thead>
-        <tbody>
-          {% for status in statuses %}
-            <tr>
-              <td>{{ status.name }}</td>
-              <td>{{ status.sort_order }}</td>
-              <td>{% if status.is_active %}是{% else %}否{% endif %}</td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="3" class="empty">暂无状态标签</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    {% include "components/panel_header.html" with title="标签列表" only %}
+    <div class="status-chip-grid">
+      {% for status in statuses %}
+        <div class="status-chip-row">
+          <span class="status-chip-name">{{ status.name }}</span>
+          <span class="status-chip-meta">#{{ status.sort_order }}</span>
+          {% if status.is_active %}
+            <span class="status active">启用</span>
+          {% else %}
+            <span class="quiet">停用</span>
+          {% endif %}
+        </div>
+      {% empty %}
+        <p class="empty">暂无状态标签</p>
+      {% endfor %}
     </div>
   </div>
 </section>

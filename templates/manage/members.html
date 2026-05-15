@@ -3,12 +3,7 @@
 {% block title %}成员管理{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>成员管理</h1>
-    <p>维护可进入系统的成员和管理员权限。</p>
-  </div>
-</div>
+{% include "components/page_header.html" with title="成员管理" subtitle="维护可进入系统的成员和管理员权限。" only %}
 
 <section class="grid two">
   <form method="post" class="panel form-stack">
@@ -24,17 +19,17 @@
   </form>
 
   <div class="panel">
-    <div class="panel-head"><h2>成员列表</h2></div>
-    <div class="table-wrap">
-      <table>
+    {% include "components/panel_header.html" with title="成员列表" only %}
+    <div class="table-wrap card-table-wrap">
+      <table class="card-table">
         <thead><tr><th>姓名</th><th>权限</th><th>状态</th><th></th></tr></thead>
         <tbody>
           {% for member in members %}
             <tr>
-              <td>{{ member.name }}</td>
-              <td>{% if member.is_admin %}管理员{% else %}成员{% endif %}</td>
-              <td>{% if member.is_active %}启用{% else %}停用{% endif %}</td>
-              <td><a href="?edit={{ member.id }}">编辑</a></td>
+              <td data-label="姓名">{{ member.name }}</td>
+              <td data-label="权限">{% if member.is_admin %}管理员{% else %}成员{% endif %}</td>
+              <td data-label="状态">{% if member.is_active %}启用{% else %}停用{% endif %}</td>
+              <td data-label="操作"><a href="?edit={{ member.id }}">编辑</a></td>
             </tr>
           {% empty %}
             <tr><td colspan="4" class="empty">暂无成员</td></tr>

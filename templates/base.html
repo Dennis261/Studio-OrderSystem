@@ -10,7 +10,7 @@
 <body>
   {% if current_member %}
     <header class="topbar">
-        <a class="brand" href="{% url 'dashboard' %}">工单协作</a>
+      <a class="brand" href="{% url 'dashboard' %}">工单协作</a>
       <nav>
         <a href="{% url 'order_list' %}">工单</a>
         {% if current_member.is_admin %}
@@ -28,9 +28,11 @@
           <a href="{% url 'manage_statuses' %}">标签</a>
         {% endif %}
       </nav>
-      <div class="member-chip">
-        {{ current_member.name }}
-        {% if current_member.is_admin %}<small>管理员</small>{% endif %}
+      <div class="topbar-actions">
+        <div class="member-chip" title="{{ current_member.name }}{% if current_member.is_admin %} · 管理员{% endif %}">
+          <span>{{ current_member.name }}</span>
+          {% if current_member.is_admin %}<small>管理员</small>{% endif %}
+        </div>
         <a href="{% url 'logout' %}">退出</a>
       </div>
     </header>

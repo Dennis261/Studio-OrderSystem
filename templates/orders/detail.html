@@ -3,13 +3,10 @@
 {% block title %}工单 #{{ order.id }}{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>工单 #{{ order.id }} · {{ order.customer_display }}</h1>
-    <p>创建人 {{ order.creator.name }} · {{ order.created_at|date:"Y-m-d H:i" }}</p>
-  </div>
-  <a href="{% url 'order_list' %}">返回列表</a>
-</div>
+{% url 'order_list' as order_list_url %}
+{% with created_at=order.created_at|date:"Y-m-d H:i" %}
+  {% include "components/page_header.html" with title_prefix="工单 #" title=order.id title_extra=order.customer_display subtitle_prefix="创建时间 " subtitle=created_at action_url=order_list_url action_label="返回列表" only %}
+{% endwith %}
 
 <section class="grid">
   <div class="panel">
@@ -17,14 +14,14 @@
       <h2>基础信息</h2>
       <div class="tag-list">
         {% for tag in order.tags.all %}
-          <span class="status">{{ tag.name }}</span>
+          {% include "components/status_badge.html" with label=tag.name only %}
         {% empty %}
           <span class="quiet">未贴标签</span>
         {% endfor %}
         {% if order.is_archived %}
-          <span class="status archive">已归档</span>
+          {% include "components/status_badge.html" with label="已归档" variant="archive" only %}
         {% else %}
-          <span class="status active">活跃</span>
+          {% include "components/status_badge.html" with label="活跃" variant="active" only %}
         {% endif %}
       </div>
     </div>
@@ -81,10 +78,7 @@
 {% endif %}
 
 <section class="panel">
-  <div class="panel-head">
-    <h2>工单图片</h2>
-    <small>{{ order.template_snapshot.name }} v{{ order.template_snapshot.version }}</small>
-  </div>
+  {% include "components/panel_header.html" with title="工单图片" meta=order.template_snapshot.name meta_mid=" v" meta_extra=order.template_snapshot.version only %}
   <div class="image-sections">
     {% for section in template_sections %}
       <div class="image-section">
@@ -107,9 +101,7 @@
 </section>
 
 <section class="panel post-history-panel">
-  <div class="panel-head">
-    <h2>跟帖记录</h2>
-  </div>
+  {% include "components/panel_header.html" with title="跟帖记录" only %}
   <div class="timeline">
     {% for post in order.posts.all %}
       <article class="post" id="post-{{ post.id }}">
@@ -135,9 +127,7 @@
 </section>
 
 <section class="panel post-compose-panel">
-  <div class="panel-head">
-    <h2>发布跟帖</h2>
-  </div>
+  {% include "components/panel_header.html" with title="发布跟帖" only %}
   <form method="post" enctype="multipart/form-data" class="form-stack post-form">
     {% csrf_token %}
     <input type="hidden" name="action" value="add_post">
@@ -148,14 +138,7 @@
     </div>
     {{ post_form.body }}
     {{ post_form.body.errors }}
-    <label class="file-picker post-image-picker">
-      <input type="file" name="attachments" multiple accept="image/*" data-file-picker>
-      <span class="file-picker-icon" aria-hidden="true"></span>
-      <span class="file-picker-copy">
-        <span class="file-picker-title">上传跟帖图片</span>
-        <span class="file-picker-count" data-file-picker-count>未选择图片</span>
-      </span>
-    </label>
+    {% include "components/file_picker.html" with name="attachments" multiple=True title="上传跟帖图片" extra_class="post-image-picker" only %}
     <button class="primary" type="submit">发布跟帖</button>
   </form>
 </section>

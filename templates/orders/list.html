@@ -3,15 +3,12 @@
 {% block title %}工单列表{% endblock %}
 
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>工单列表</h1>
-    <p>按状态标签、归档状态或我的待办筛选当前工单。</p>
-  </div>
-  {% if current_member.is_admin %}
-    <a class="primary" href="{% url 'order_create' %}">新建工单</a>
-  {% endif %}
-</div>
+{% if current_member.is_admin %}
+  {% url 'order_create' as order_create_url %}
+  {% include "components/page_header.html" with title="工单列表" subtitle="按状态标签、归档状态或我的待办筛选当前工单。" action_url=order_create_url action_label="新建工单" action_class="primary" only %}
+{% else %}
+  {% include "components/page_header.html" with title="工单列表" subtitle="按状态标签、归档状态或我的待办筛选当前工单。" only %}
+{% endif %}
 
 <form method="get" class="filters">
   <label>状态

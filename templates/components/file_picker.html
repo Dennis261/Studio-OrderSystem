@@ -1,0 +1,8 @@
+<label class="file-picker{% if extra_class %} {{ extra_class }}{% endif %}">
+  <input type="file" name="{{ name_prefix }}{{ name }}" {% if multiple %}multiple{% endif %} accept="{{ accept|default:'image/*' }}" data-file-picker>
+  <span class="file-picker-icon" aria-hidden="true"></span>
+  <span class="file-picker-copy">
+    <span class="file-picker-title">{{ title|default:"选择图片" }}</span>
+    <span class="file-picker-count" data-file-picker-count>{{ empty_text|default:"未选择图片" }}</span>
+  </span>
+</label>

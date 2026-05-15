@@ -146,12 +146,6 @@ class WorkOrder(models.Model):
         verbose_name="状态标签",
     )
     is_archived = models.BooleanField("已归档", default=False)
-    creator = models.ForeignKey(
-        Member,
-        verbose_name="创建人",
-        on_delete=models.PROTECT,
-        related_name="created_orders",
-    )
     template_snapshot = models.JSONField("图片模板快照", default=dict)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)

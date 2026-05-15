@@ -24,16 +24,46 @@ class Command(BaseCommand):
                 member.set_pin(pin)
             member.save()
 
-        tag_names = ["新建", "建模中", "待确认", "待生产", "生产中", "已发货", "已完成", "售后"]
+        tag_names = [
+            "排单",
+            "建模中",
+            "建模待修改",
+            "小头生产",
+            "大头生产",
+            "小头排妆",
+            "大头排妆",
+            "大头小头分别在化妆",
+            "正在排假发",
+            "正在假发造型",
+            "大小头发货",
+            "没买假发",
+            "已买假发",
+            "道具生产中",
+            "排道具",
+            "道具制作中",
+            "没有道具",
+            "道具完成",
+            "小头发货",
+            "大头发货",
+            "没做发色确认卡",
+            "已做发色确认卡",
+            "发色确认卡确认",
+            "客户已支付尾款",
+            "待发货大头",
+            "已发货",
+        ]
         tags = {}
         for index, name in enumerate(tag_names, start=1):
-            tag, _ = StatusOption.objects.get_or_create(name=name, defaults={"sort_order": index})
+            tag, _ = StatusOption.objects.update_or_create(
+                name=name,
+                defaults={"sort_order": index, "is_active": True},
+            )
             tags[name] = tag
 
         if not ImageTemplate.objects.exists():
             admin = Member.objects.filter(is_admin=True).first()
             template = ImageTemplate.objects.create(
-                name="默认工单模板",
+                name="角色头模订单模板",
                 version=1,
                 is_active=True,
                 created_by=admin,
@@ -42,24 +72,45 @@ class Command(BaseCommand):
                 [
                     CustomerTemplateItem(
                         template=template,
-                        key="customer-name",
-                        label="客户姓名",
+                        key="role-source",
+                        label="角色作品来源",
                         required=True,
                         sort_order=1,
                     ),
                     CustomerTemplateItem(
                         template=template,
-                        key="contact",
-                        label="联系方式",
-                        required=False,
+                        key="role-name",
+                        label="角色名字",
+                        required=True,
                         sort_order=2,
                     ),
                     CustomerTemplateItem(
                         template=template,
-                        key="note",
-                        label="客户备注",
-                        required=False,
+                        key="customer-height",
+                        label="客户身高",
+                        required=True,
                         sort_order=3,
+                    ),
+                    CustomerTemplateItem(
+                        template=template,
+                        key="customer-weight",
+                        label="客户体重",
+                        required=True,
+                        sort_order=4,
+                    ),
+                    CustomerTemplateItem(
+                        template=template,
+                        key="eye-height",
+                        label="客户眼高",
+                        required=True,
+                        sort_order=5,
+                    ),
+                    CustomerTemplateItem(
+                        template=template,
+                        key="head-circumference",
+                        label="客户头围",
+                        required=True,
+                        sort_order=6,
                     ),
                 ]
             )
@@ -95,57 +146,81 @@ class Command(BaseCommand):
 
         if not WorkOrder.objects.exists():
             template = ImageTemplate.active()
-            admin = Member.objects.filter(is_admin=True).first()
-            creator = Member.objects.filter(name="客服小王").first() or admin
             sample_orders = [
                 {
-                    "customer": "张三",
-                    "contact": "13800000001",
-                    "note": "常规新单，等待建模。",
-                    "tags": ["新建"],
+                    "role_source": "原神",
+                    "role_name": "芙宁娜",
+                    "height": "165cm",
+                    "weight": "50kg",
+                    "eye_height": "153cm",
+                    "head_circumference": "55cm",
+                    "tags": ["排单", "已买假发", "没有道具"],
                     "is_archived": False,
                 },
                 {
-                    "customer": "李四",
-                    "contact": "13800000002",
-                    "note": "建模中，同时等待客户确认细节。",
-                    "tags": ["建模中", "待确认"],
+                    "role_source": "崩坏：星穹铁道",
+                    "role_name": "卡芙卡",
+                    "height": "172cm",
+                    "weight": "56kg",
+                    "eye_height": "160cm",
+                    "head_circumference": "56cm",
+                    "tags": ["建模中", "已做发色确认卡"],
                     "is_archived": False,
                 },
                 {
-                    "customer": "王五",
-                    "contact": "13800000003",
-                    "note": "已经发货，后续可能进入售后。",
+                    "role_source": "明日方舟",
+                    "role_name": "德克萨斯",
+                    "height": "168cm",
+                    "weight": "52kg",
+                    "eye_height": "156cm",
+                    "head_circumference": "55.5cm",
+                    "tags": ["小头生产", "大头生产", "排道具"],
+                    "is_archived": False,
+                },
+                {
+                    "role_source": "阴阳师",
+                    "role_name": "不知火",
+                    "height": "160cm",
+                    "weight": "48kg",
+                    "eye_height": "148cm",
+                    "head_circumference": "54cm",
+                    "tags": ["大头小头分别在化妆", "正在排假发"],
+                    "is_archived": False,
+                },
+                {
+                    "role_source": "王者荣耀",
+                    "role_name": "貂蝉",
+                    "height": "166cm",
+                    "weight": "51kg",
+                    "eye_height": "154cm",
+                    "head_circumference": "55cm",
+                    "tags": ["客户已支付尾款", "待发货大头"],
+                    "is_archived": False,
+                },
+                {
+                    "role_source": "VOCALOID",
+                    "role_name": "初音未来",
+                    "height": "158cm",
+                    "weight": "45kg",
+                    "eye_height": "146cm",
+                    "head_circumference": "54cm",
                     "tags": ["已发货"],
-                    "is_archived": False,
-                },
-                {
-                    "customer": "赵六",
-                    "contact": "13800000004",
-                    "note": "已完成并归档，仅默认列表隐藏。",
-                    "tags": ["已完成"],
-                    "is_archived": True,
-                },
-                {
-                    "customer": "钱七",
-                    "contact": "13800000005",
-                    "note": "已完成后产生售后跟进。",
-                    "tags": ["已完成", "售后"],
                     "is_archived": True,
                 },
             ]
             for sample in sample_orders:
                 order = WorkOrder.objects.create(
-                    customer_name=sample["customer"],
-                    customer_contact=sample["contact"],
-                    customer_note=sample["note"],
+                    customer_name=sample["role_name"],
+                    customer_note=f"{sample['role_source']} · {sample['role_name']}",
                     customer_data={
-                        "customer-name": sample["customer"],
-                        "contact": sample["contact"],
-                        "note": sample["note"],
+                        "role-source": sample["role_source"],
+                        "role-name": sample["role_name"],
+                        "customer-height": sample["height"],
+                        "customer-weight": sample["weight"],
+                        "eye-height": sample["eye_height"],
+                        "head-circumference": sample["head_circumference"],
                     },
                     is_archived=sample["is_archived"],
-                    creator=creator,
                     template_snapshot=template.to_snapshot() if template else {},
                 )
                 order.tags.set(tags[name] for name in sample["tags"])

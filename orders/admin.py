@@ -33,7 +33,7 @@ class WorkOrderImageInline(admin.TabularInline):
 
 @admin.register(WorkOrder)
 class WorkOrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "customer_display", "tag_display", "is_archived", "creator", "updated_at")
+    list_display = ("id", "customer_display", "tag_display", "is_archived", "updated_at")
     list_filter = ("is_archived", "tags")
     search_fields = ("customer_name", "customer_contact")
     filter_horizontal = ("tags",)
