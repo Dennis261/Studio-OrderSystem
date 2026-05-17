@@ -22,6 +22,15 @@ python3 -m venv .venv
 .venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
 
+```powershell
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt
+.\.venv\Scripts\python manage.py migrate
+.\.venv\Scripts\python manage.py seed_demo
+.\.venv\Scripts\python manage.py runserver 127.0.0.1:8000
+```
+
+
 开发期如果要直接清空并重建数据库、迁移文件和 mock 数据：
 
 ```bash
