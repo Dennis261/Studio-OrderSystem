@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from PIL import Image
 
-from accounts.models import Member
+from accounts.models import ActivityLog, Member
 from threads.models import Post, PostAttachment
 from threads.services import create_todos_for_mentions
 from todos.models import Todo
@@ -157,6 +157,12 @@ class ViewTests(TestCase):
         )
         self.assertRedirects(response, reverse("dashboard"))
         self.assertEqual(self.client.session["member_id"], self.member.id)
+        self.assertTrue(
+            ActivityLog.objects.filter(
+                actor=self.member,
+                action=ActivityLog.Action.LOGIN,
+            ).exists()
+        )
 
     def test_non_admin_cannot_access_manage_page(self):
         self.login_as(self.member)
@@ -181,6 +187,13 @@ class ViewTests(TestCase):
         self.assertEqual(order.customer_data["customer-name"], "李四")
         self.assertEqual(order.customer_display, "李四")
         self.assertEqual(list(order.tags.all()), [self.status])
+        self.assertTrue(
+            ActivityLog.objects.filter(
+                actor=self.admin,
+                action=ActivityLog.Action.ORDER_CREATE,
+                target_id=order.id,
+            ).exists()
+        )
 
     def test_order_can_have_multiple_tags_and_renders_them(self):
         self.order.tags.add(self.review_status)
@@ -204,6 +217,30 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.order.refresh_from_db()
         self.assertEqual(list(self.order.tags.values_list("name", flat=True)), ["待确认"])
+        self.assertTrue(
+            ActivityLog.objects.filter(
+                actor=self.member,
+                action=ActivityLog.Action.ORDER_TAGS_UPDATE,
+                target_id=self.order.id,
+            ).exists()
+        )
+
+    def test_admin_can_view_activity_logs(self):
+        ActivityLog.objects.create(
+            actor=self.admin,
+            action=ActivityLog.Action.ORDER_CREATE,
+            target_type="工单",
+            target_id=self.order.id,
+            target_repr=str(self.order),
+            summary="创建工单：张三",
+        )
+        self.login_as(self.admin)
+
+        response = self.client.get(reverse("manage_logs"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "操作日志")
+        self.assertContains(response, "创建工单：张三")
 
     def test_order_list_filters_by_tag(self):
         other = WorkOrder.objects.create(

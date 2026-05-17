@@ -482,6 +482,29 @@ td:first-child a {
   white-space: nowrap;
 }
 
+.activity-log-table {
+  min-width: 900px;
+}
+
+.log-details {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.log-details summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.log-details code {
+  display: block;
+  max-width: 28rem;
+  margin-top: 0.3rem;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
 .status {
   display: inline-flex;
   align-items: center;

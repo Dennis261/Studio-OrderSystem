@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}操作日志{% endblock %}
+
+{% block content %}
+{% include "components/page_header.html" with title="操作日志" subtitle="记录成员在系统里的关键操作，方便追溯工单和配置变化。" only %}
+
+<form method="get" class="filters">
+  <label>
+    操作类型
+    <select name="action">
+      <option value="">全部操作</option>
+      {% for value, label in actions %}
+        <option value="{{ value }}" {% if selected_action == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    操作人
+    <select name="member">
+      <option value="">全部成员</option>
+      {% for member in members %}
+        <option value="{{ member.id }}" {% if selected_member == member.id|stringformat:"s" %}selected{% endif %}>{{ member.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    关键词
+    <input name="q" value="{{ query }}" placeholder="搜索对象或摘要">
+  </label>
+  <button class="primary" type="submit">筛选</button>
+  <a href="{% url 'manage_logs' %}">清空</a>
+</form>
+
+<section class="panel">
+  {% include "components/panel_header.html" with title="最近 200 条" only %}
+  <div class="table-wrap card-table-wrap">
+    <table class="card-table activity-log-table">
+      <thead>
+        <tr>
+          <th>时间</th>
+          <th>操作人</th>
+          <th>操作</th>
+          <th>对象</th>
+          <th>摘要</th>
+          <th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td data-label="时间">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+            <td data-label="操作人">{{ log.actor.name|default:"系统" }}</td>
+            <td data-label="操作"><span class="status">{{ log.get_action_display }}</span></td>
+            <td data-label="对象">
+              {% if log.target_repr %}
+                <div class="key-value-cell">
+                  <small>{{ log.target_type|default:"对象" }} #{{ log.target_id|default:"-" }}</small>
+                  <strong>{{ log.target_repr }}</strong>
+                </div>
+              {% else %}
+                <span class="quiet">-</span>
+              {% endif %}
+            </td>
+            <td data-label="摘要">
+              {{ log.summary|default:"-" }}
+              {% if log.metadata %}
+                <details class="log-details">
+                  <summary>详情</summary>
+                  <code>{{ log.metadata }}</code>
+                </details>
+              {% endif %}
+            </td>
+            <td data-label="IP">{{ log.ip_address|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="empty">暂无操作日志</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
