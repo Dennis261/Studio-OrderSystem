@@ -2,7 +2,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.activity import log_activity
 from accounts.decorators import member_required
+from accounts.models import ActivityLog
 
 from .models import Todo
 
@@ -33,6 +35,13 @@ def open_todo(request, pk):
         todo.status = Todo.Status.READ
         todo.read_at = timezone.now()
         todo.save(update_fields=["status", "read_at"])
+        log_activity(
+            request,
+            ActivityLog.Action.TODO_READ,
+            target=todo.order,
+            summary=f"阅读待办：{todo.order.customer_display}",
+            metadata={"todo_id": todo.id, "source_post_id": todo.source_post_id},
+        )
     return redirect(f"{todo.order.get_absolute_url()}#post-{todo.source_post_id}")
 
 
@@ -45,4 +54,11 @@ def complete_todo(request, pk):
     if todo.read_at is None:
         todo.read_at = timezone.now()
     todo.save(update_fields=["status", "read_at", "done_at"])
+    log_activity(
+        request,
+        ActivityLog.Action.TODO_DONE,
+        target=todo.order,
+        summary=f"完成待办：{todo.order.customer_display}",
+        metadata={"todo_id": todo.id, "source_post_id": todo.source_post_id},
+    )
     return redirect(request.POST.get("next") or "todo_list")

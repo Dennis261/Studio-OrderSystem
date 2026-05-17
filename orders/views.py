@@ -3,8 +3,9 @@ from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
+from accounts.activity import log_activity
 from accounts.decorators import admin_member_required, member_required
-from accounts.models import Member
+from accounts.models import ActivityLog, Member
 from threads.forms import PostForm
 from threads.models import PostAttachment
 from threads.services import create_todos_for_mentions
@@ -94,6 +95,17 @@ def order_create(request):
             if default_tag:
                 order.tags.add(default_tag)
         _save_order_images(order, request, request.current_member)
+        log_activity(
+            request,
+            ActivityLog.Action.ORDER_CREATE,
+            target=order,
+            summary=f"创建工单：{order.customer_display}",
+            metadata={
+                "tags": list(order.tags.values_list("name", flat=True)),
+                "template": template_snapshot.get("name", ""),
+                "template_version": template_snapshot.get("version"),
+            },
+        )
         messages.success(request, "工单已创建。")
         return redirect(order)
 
@@ -122,15 +134,32 @@ def order_detail(request, pk):
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "update_tags":
+            before_tags = list(order.tags.values_list("name", flat=True))
             tags = StatusOption.objects.filter(pk__in=request.POST.getlist("tags"), is_active=True)
             order.tags.set(tags)
             order.save(update_fields=["updated_at"])
+            after_tags = list(order.tags.values_list("name", flat=True))
+            log_activity(
+                request,
+                ActivityLog.Action.ORDER_TAGS_UPDATE,
+                target=order,
+                summary=f"更新工单标签：{order.customer_display}",
+                metadata={"before": before_tags, "after": after_tags},
+            )
             messages.success(request, "状态标签已更新。")
             return redirect(order)
 
         if action == "update_archive":
+            before_archived = order.is_archived
             order.is_archived = request.POST.get("is_archived") == "1"
             order.save(update_fields=["is_archived", "updated_at"])
+            log_activity(
+                request,
+                ActivityLog.Action.ORDER_ARCHIVE_UPDATE,
+                target=order,
+                summary=f"{'归档' if order.is_archived else '取消归档'}工单：{order.customer_display}",
+                metadata={"before": before_archived, "after": order.is_archived},
+            )
             messages.success(request, "归档状态已更新。")
             return redirect(order)
 
@@ -150,6 +179,17 @@ def order_detail(request, pk):
                         PostAttachment.objects.create(post=post, image=image)
                     todos = create_todos_for_mentions(post)
                     order.save(update_fields=["updated_at"])
+                    log_activity(
+                        request,
+                        ActivityLog.Action.POST_CREATE,
+                        target=order,
+                        summary=f"发布跟帖：{order.customer_display}",
+                        metadata={
+                            "post_id": post.id,
+                            "attachments": len(attachments),
+                            "todos": len(todos),
+                        },
+                    )
                     messages.success(request, f"跟帖已发布，生成 {len(todos)} 条待办。")
                     return redirect(f"{order.get_absolute_url()}#post-{post.id}")
         else:
@@ -188,7 +228,14 @@ def order_detail(request, pk):
 def manage_statuses(request):
     form = StatusOptionForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        status = form.save()
+        log_activity(
+            request,
+            ActivityLog.Action.STATUS_SAVE,
+            target=status,
+            summary=f"保存状态标签：{status.name}",
+            metadata={"sort_order": status.sort_order, "is_active": status.is_active},
+        )
         messages.success(request, "状态已保存。")
         return redirect("manage_statuses")
     return render(
@@ -207,7 +254,17 @@ def manage_templates(request):
     initial = {"name": current.name} if current else {"name": "默认模板"}
     form = ImageTemplateForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
-        form.save(request.current_member)
+        template = form.save(request.current_member)
+        log_activity(
+            request,
+            ActivityLog.Action.TEMPLATE_PUBLISH,
+            target=template,
+            summary=f"发布模板：{template.name} v{template.version}",
+            metadata={
+                "customer_fields": template.customer_items.count(),
+                "image_items": template.items.count(),
+            },
+        )
         messages.success(request, "新模板版本已发布，只会影响之后创建的工单。")
         return redirect("manage_templates")
 
